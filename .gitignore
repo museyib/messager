@@ -1,0 +1,6 @@
+/server/target/
+/web-client/node_modules/
+/web-client/dist/
+/web-client/.env
+/server/.env
+/server/src/main/resources/application.properties
