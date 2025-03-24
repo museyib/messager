@@ -4,3 +4,5 @@
 /web-client/.env
 /server/.env
 /server/src/main/resources/application.properties
+# Local Netlify folder
+.netlify
