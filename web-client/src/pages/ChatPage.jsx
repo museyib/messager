@@ -33,6 +33,8 @@ export default function Chat () {
     const observerRef = useRef(null);
     const subscriptionRef = useRef(null);
 
+    const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
+
     useEffect(() => {
         const storedUsername = localStorage.getItem('username');
         if (storedUsername)
@@ -81,7 +83,7 @@ export default function Chat () {
     useEffect(() => {
         if (!clientRef.current && username) {
             const token = localStorage.getItem('token');
-            const socket = new SockJS(`http://192.168.1.5:8080/ws?token=${token}`);
+            const socket = new SockJS(BASE_API_URL + `/ws?token=${token}`);
             const stompClient = new Client({
                 webSocketFactory: () => socket,
                 onConnect: () => {

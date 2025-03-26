@@ -3,8 +3,10 @@ import axios from 'axios';
 let isRefreshing = false;
 let failedQueue = [];
 
+const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
+
 const axiosInstance = axios.create({
-    baseURL: 'http://192.168.1.5:8080',
+    baseURL: BASE_API_URL,
 })
 
 axiosInstance.interceptors.response.use(
@@ -12,7 +14,7 @@ axiosInstance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if ((error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
+        if (error.response && (error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise((resolve) => {
                     failedQueue.push({ resolve, originalRequest});

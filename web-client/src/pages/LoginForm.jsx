@@ -7,6 +7,7 @@ import Title from "./TitleFragment.jsx";
 
 export default function Login() {
     const [info, setInfo] = useState(null);
+    const [fieldRequirePrompted, setFieldRequirePrompted] = useState(false);
     const [infoKey, setInfoKey] = useState(0);
 
     const [formData, setFormData] = useState({
@@ -26,6 +27,7 @@ export default function Login() {
     const showInfo = (info) => {
         setInfo(info);
         setInfoKey((prev) => prev + 1);
+        setFieldRequirePrompted(!info.success)
     }
 
     const handleChange = (e) => {
@@ -36,10 +38,10 @@ export default function Login() {
     const handleLogin = (e) => {
         e.preventDefault();
 
-        if (!formData.username && !formData.password) {
+        if (!formData.username || !formData.password) {
             showInfo({
                 success: false,
-                message: 'Email and password are required!'
+                message: 'All fields are required!'
             });
             return;
         }
@@ -57,7 +59,7 @@ export default function Login() {
         }).catch((error) => {
             showInfo({
                 success: false,
-                message: 'Login failed: ' + error.response.data.message
+                message: 'Login failed: ' + error
             })
         });
     };
@@ -82,6 +84,7 @@ export default function Login() {
                         value={formData.username}
                         autoComplete='username'
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.username) ? 'input-invalid' : ''}
                     />
                 </div>
                 <div>
@@ -92,6 +95,7 @@ export default function Login() {
                         name='password'
                         value={formData.password}
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.password) ? 'input-invalid' : ''}
                     />
                 </div>
                 <input type='submit' className='btn' value='Login'/>

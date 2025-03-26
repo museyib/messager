@@ -7,7 +7,8 @@ import Info from './InfoFragment.jsx';
 import Title from "./TitleFragment.jsx";
 
 export default function Register() {
-    const [formReady, setFormReady] = useState(false);
+    const [formReady, setFormReady] = useState(true);
+    const [fieldRequirePrompted, setFieldRequirePrompted] = useState(false);
     const navigate = useNavigate();
     const debounceTimer = useRef(null);
     const [info, setInfo] = useState(null);
@@ -15,14 +16,16 @@ export default function Register() {
 
     const [formData, setFormData] = useState({
         username: '',
-        password: '',
         email: '',
         phone: '',
+        password: '',
+        password_r: '',
     });
 
     const showInfo = (info) => {
         setInfo(info);
         setInfoKey((prev) => prev + 1);
+        setFieldRequirePrompted(!info.success)
     }
 
     const handleChange = (e) => {
@@ -35,6 +38,7 @@ export default function Register() {
                 checkForExistence(name, value).then(() => {
                     setFormReady(document.getElementsByClassName('input-invalid').length === 0)
                 }).catch((error) => {
+                    console.log(error)
                     document.getElementById(name).classList.add('input-invalid');
                     showInfo( {
                         success: false,
@@ -70,6 +74,14 @@ export default function Register() {
             return;
         }
 
+        if (formData.password !== formData.password_r) {
+            showInfo( {
+                success: false,
+                message: 'Passwords do not match.'
+            });
+            return;
+        }
+
         axiosInstance.post('/user/create', formData).then((response) => {
             if (response.status === 200) {
                 showInfo({
@@ -82,7 +94,7 @@ export default function Register() {
         }).catch((error) => {
             showInfo({
                 success: false,
-                message: 'Registration failed: ' + error.response.data.message
+                message: 'Registration failed: ' + error
             });
         });
     }
@@ -101,6 +113,7 @@ export default function Register() {
                         value={formData.email}
                         autoComplete='email'
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.email) ? 'input-invalid' : ''}
                     />
                 </div>
                 <div>
@@ -112,6 +125,7 @@ export default function Register() {
                         value={formData.username}
                         autoComplete='username'
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.username) ? 'input-invalid' : ''}
                     />
                 </div>
                 <div>
@@ -123,6 +137,7 @@ export default function Register() {
                         value={formData.phone}
                         autoComplete='phone'
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.phone) ? 'input-invalid' : ''}
                     />
                 </div>
                 <div>
@@ -133,6 +148,18 @@ export default function Register() {
                         name='password'
                         value={formData.password}
                         onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.password) ? 'input-invalid' : ''}
+                    />
+                </div>
+                <div>
+                    <label htmlFor='password_r'>Password (Repeat)</label>
+                    <input
+                        id='password_r'
+                        type='password'
+                        name='password_r'
+                        value={formData.password_r}
+                        onChange={handleChange}
+                        className={(fieldRequirePrompted && !formData.password_r) ? 'input-invalid' : ''}
                     />
                 </div>
                 <input type='submit' className='btn' value='Register'/>

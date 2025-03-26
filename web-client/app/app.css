@@ -102,12 +102,12 @@ body {
 .app-title {
   top: 10px;
   left: 10px;
-  position: absolute;
   font-size: 2rem;
   font-weight: bold;
   color: var(--button-bg);
   margin-bottom: 20px;
   cursor: pointer;
+  width: 200px;
 }
 
 .subtitle {

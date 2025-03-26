@@ -10,6 +10,8 @@ export default function Title() {
     }
 
     return (
-        <h2 className='app-title' onClick={handleClick}>Messager</h2>
+        <h2 className='app-title' onClick={handleClick}>
+            <img src={'logo.png'}  alt='logo'/>
+        </h2>
     )
 }
