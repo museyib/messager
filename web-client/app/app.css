@@ -164,7 +164,7 @@ body {
   border: none;
   background-color: var(--button-bg);
   color: var(--button-text);
-  border-radius: 5px;
+  border-radius: 20px;
   transition: 0.3s ease;
 }
 
@@ -175,16 +175,15 @@ body {
 /* Theme Switch */
 .theme-toggle {
   position: absolute;
-  top: 20px;
+  top: 10px;
   right: 20px;
 }
 
-/* Toggle Switch Styling */
 .switch {
   position: relative;
   display: inline-block;
-  width: 100px;
-  height: 50px;
+  width: 60px;
+  height: 30px;
 }
 
 .switch input {
@@ -193,7 +192,6 @@ body {
   height: 0;
 }
 
-/* Slider (toggle button) */
 .slider {
   position: absolute;
   cursor: pointer;
@@ -211,9 +209,7 @@ body {
 .slider:before {
   content: "🌙";
   position: absolute;
-  width: 30px;
-  height: 30px;
-  font-size: 30px;
+  font-size: 20px;
   transition: transform 0.4s ease-in-out;
 }
 
@@ -224,7 +220,7 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   content: "🌞";
-  transform: translateX(55px);
+  transform: translateX(30px);
 }
 
 .message-list-container {
