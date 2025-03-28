@@ -8,16 +8,20 @@ import ToggleTheme from './ToggleThemeFragment.jsx';
 import Info from './InfoFragment.jsx';
 import Title from "./TitleFragment.jsx";
 import {logout} from "../api/auth.js";
+import EmojiPicker, {Theme} from "emoji-picker-react";
 
 export default function Chat () {
     useNavigate();
+    const [isClient, setIsClient] = useState(false);
     const [windowWidth, setWindowWidth] = useState(0);
-    const [searchVisible, setSearchVisible] = useState(false);
+    const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
     const [username, setUsername] = useState('');
     const [recipient, setRecipient] = useState('');
     const [messageText, setMessageText] = useState('');
     const [lastError, setLastError] = useState('');
     const [phoneToSearch, setPhoneToSearch] = useState('');
+    const [emojiPickerPosition, setEmojiPickerPosition] = useState({});
 
     const [now, setNow] = useState(Date.now());
 
@@ -34,10 +38,12 @@ export default function Chat () {
     const clientRef = useRef(null);
     const observerRef = useRef(null);
     const subscriptionRef = useRef(null);
+    const inputRef = useRef(null);
 
     const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
 
     useEffect(() => {
+        setIsClient(true);
         const storedUsername = localStorage.getItem('username');
         if (storedUsername)
             setUsername(storedUsername);
@@ -63,10 +69,23 @@ export default function Chat () {
 
         return () => {
             window.removeEventListener('scroll', markMessagesAsRead);
+            window.removeEventListener('resize', handleResize);
             clearInterval(interval);
         }
 
     }, []);
+
+    useEffect(() => {
+        setDarkMode(localStorage.getItem("theme") === "dark");
+    });
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleEscapePress);
+
+        return () => {
+            window.removeEventListener('keydown', handleEscapePress);
+        }
+    }, [emojiPickerVisible])
 
     useEffect(() => {
         const timeoutDelay = Math.max(1000, users.length * 100);
@@ -78,6 +97,8 @@ export default function Chat () {
     }, [users]);
 
     useEffect(() => {
+        setEmojiPickerVisible(false);
+        setMessageText('');
         fetchMessages(recipient);
 
         setTimeout(() =>{
@@ -158,8 +179,27 @@ export default function Chat () {
         });
     }
 
-    const toggleSearchInput = () => {
-        setSearchVisible(!searchVisible);
+    const toggleEmojiPicker = (e) => {
+        e.preventDefault();
+        if (!emojiPickerVisible)
+            setEmojiPickerPosition({
+                left: e.clientX
+            });
+        setEmojiPickerVisible((prev) => !prev);
+    }
+
+    const handleEmojiSelected = (emoji) => {
+        const inputElement = inputRef.current;
+        const caretPosition = inputElement.selectionStart;
+        setMessageText((prev) => {
+            const head = prev.substring(0, caretPosition);
+            const tail = prev.substring(caretPosition);
+            return head + emoji.emoji + tail;
+        });
+
+        requestAnimationFrame(() => {
+            inputElement.setSelectionRange(caretPosition + emoji.emoji.length, caretPosition + emoji.emoji.length);
+        })
     }
 
     const isUserAtBottom = () => {
@@ -348,7 +388,7 @@ export default function Chat () {
                 return `${dif} days ago`;
         }
         return timeString;
-    };
+    }
 
     const handleMessageChange = (e) => {
         setMessageText(e.target.value);
@@ -511,6 +551,15 @@ export default function Chat () {
         logout();
     }
 
+    const handleEscapePress = (e) => {
+        if (e.key === 'Escape') {
+            if (emojiPickerVisible)
+                setEmojiPickerVisible(false);
+            else
+                setRecipient('');
+        }
+    }
+
     return (
         <div className='home-container'>
             <link rel='stylesheet' href={'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'}/>
@@ -521,10 +570,10 @@ export default function Chat () {
                 <p onClick={handleLogOut} className='link-btn'>Log out</p>
             </h2>
             <div className='search-container'>
-                <span id='search-icon' className='fas fa-search'></span>
                 {(
                     <form onSubmit={handleSearchByPhone}>
                         <input type='text'
+                               onFocus={() => setEmojiPickerVisible(false)}
                                placeholder='Search by phone'
                                onChange={handleSearchPhoneChange}
                                value={phoneToSearch}
@@ -594,7 +643,15 @@ export default function Chat () {
                 <div ref={messageEndRef}></div>
             </div>
 
+            {isClient && (
+                <div style={emojiPickerPosition}
+                     className={`emoji-picker ${emojiPickerVisible ? '' : 'hidden'}`} >
+                    <EmojiPicker theme={darkMode ? Theme.DARK : Theme.LIGHT} onEmojiClick={handleEmojiSelected} />
+                </div>
+            )}
+
             <form onSubmit={handleSendMessage} className={'message-input-form ' + (recipient ? '' : 'hidden')}>
+                <p className='fas fa-smile link-btn' onClick={toggleEmojiPicker}></p>
                 <input id='message'
                        name='message'
                        value={messageText}
@@ -602,6 +659,7 @@ export default function Chat () {
                        type='text'
                        placeholder='Type your message'
                        autoComplete='off'
+                       ref={inputRef}
                 />
                 <button type='submit' className='btn fas fa-paper-plane'></button>
             </form>
