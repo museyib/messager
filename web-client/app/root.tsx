@@ -1,6 +1,6 @@
 import {
     isRouteErrorResponse,
-    Links,
+    Links, type LinksFunction,
     Meta,
     Outlet,
     Scripts,
@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import LinksFunction = Route.LinksFunction;
+
 import React from "react";
 
 export const links: LinksFunction = () => ([
@@ -34,6 +34,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
           <title>Messager</title>
+          <meta property="og:title" content="Messager" />
+          <meta property="og:description" content="Messager - Messaging App" />
+          <meta property="og:image" content="https://messager.me/logo.png" />
+          <meta property="og:url" content="https://messager.me" />
+          <meta property="og:type" content="website" />
+
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="Messager" />
+          <meta name="twitter:description" content="Messager - Messaging App" />
+          <meta name="twitter:image" content="https://messager.me/logo.png" />
       </head>
       <body>
         {children}

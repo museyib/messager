@@ -11,6 +11,8 @@ import {logout} from "../api/auth.js";
 
 export default function Chat () {
     useNavigate();
+    const [windowWidth, setWindowWidth] = useState(0);
+    const [searchVisible, setSearchVisible] = useState(false);
     const [username, setUsername] = useState('');
     const [recipient, setRecipient] = useState('');
     const [messageText, setMessageText] = useState('');
@@ -42,11 +44,18 @@ export default function Chat () {
         else
             logout();
 
+        setWindowWidth(window.innerWidth);
+
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth);
+        }
+
         fetchUsers();
 
         fetchUnreadMessages()
 
         window.addEventListener('scroll', markMessagesAsRead);
+        window.addEventListener('resize', handleResize);
 
         const interval = setInterval(() => {
             setNow(Date.now());
@@ -147,6 +156,10 @@ export default function Chat () {
                 sendDeliveredReceiptWithRetry(newMessage.clientId);
             }
         });
+    }
+
+    const toggleSearchInput = () => {
+        setSearchVisible(!searchVisible);
     }
 
     const isUserAtBottom = () => {
@@ -341,8 +354,13 @@ export default function Chat () {
         setMessageText(e.target.value);
     }
 
-    const handleReceiverChange = (username) => {
+    const handleRecipientChange = (username) => {
         setRecipient(username);
+    }
+
+    const handleRecipientChangeFromSelect = (e) => {
+        e.preventDefault();
+        setRecipient(e.target.value);
     }
 
     const handleBack = () => {
@@ -502,35 +520,48 @@ export default function Chat () {
                 <i className='fas fa-user-circle'></i> You are logged in as <u><strong>{username}</strong></u>
                 <p onClick={handleLogOut} className='link-btn'>Log out</p>
             </h2>
-            <form onSubmit={handleSearchByPhone}>
-                <input id='search-input'
-                       type='text'
-                       placeholder='Search by phone'
-                       onChange={handleSearchPhoneChange}
-                       value={phoneToSearch}
-                />
-            </form>
-            <div id='acitve-chats' className='select user-list'>
-                {users.map((user, index) => {
-                    return (
-                        <div key={index}
-                             id={'user-' + user.username}
-                             className={`user-item ${recipient === user.username ? 'selected' : ''}`}
-                             onClick={() => handleReceiverChange(user.username)}>
-                            {user.username}
-                            {unreadMessages[user.username] > 0 && (
-                                <span className='unread-badge'>
-                                    {unreadMessages[user.username]}
-                                </span>
-                            )}
-                        </div>
-                    )
-                })}
+            <div className='search-container'>
+                <span id='search-icon' className='fas fa-search'></span>
+                {(
+                    <form onSubmit={handleSearchByPhone}>
+                        <input type='text'
+                               placeholder='Search by phone'
+                               onChange={handleSearchPhoneChange}
+                               value={phoneToSearch}
+                        />
+                    </form>
+                )}
+            </div>
+            <div className='user-list'>
+                {windowWidth <= 768 ? (
+                    <select value={recipient}
+                            onChange={handleRecipientChangeFromSelect}
+                            className={`dropdown ${recipient ? '' : 'not-selected'}`}
+                    >
+                        <option value=''>--not selected--</option>
+                        {users.map((user, index) => (
+                            <option key={index} id={'user-' + user.username}>
+                                {user.username}
+                                {unreadMessages[user.username] > 0 && (<span className='unread-badge'>{unreadMessages[user.username]}</span>)}
+                            </option>
+                        ))}
+                    </select>
+                ) : (
+                    users.map((user, index) => (
+                            <div key={index}
+                                 id={'user-' + user.username}
+                                 className={`user-item ${recipient === user.username ? 'selected' : ''}`}
+                                 onClick={() => handleRecipientChange(user.username)}>
+                                {user.username}
+                                {unreadMessages[user.username] > 0 && (<span className='unread-badge'>{unreadMessages[user.username]}</span>)}
+                            </div>
+                    )))
+                }
             </div>
 
-            <div ref={messageListRef} className={`message-list-container`} id='message-container'>
+            <div ref={messageListRef} className='message-list-container' id='message-container'>
                 <div className={`selected-user-title ${recipient ? '' : 'hidden'}`}>
-                    <span id='back' onClick={handleBack}></span>
+                    <span id='back' onClick={handleBack} className='fas fa-arrow-left'></span>
                     <p>{recipient}</p>
                 </div>
                 <ul id='message-list' className='message-list'>

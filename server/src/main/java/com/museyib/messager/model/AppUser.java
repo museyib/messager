@@ -2,6 +2,7 @@ package com.museyib.messager.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
@@ -19,16 +20,20 @@ public class AppUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 100)
+    @Nationalized
     private String username;
 
-    @Column
+    @Column(length = 100)
+    @Nationalized
     private String password;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 100)
+    @Nationalized
     private String email;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 100)
+    @Nationalized
     private String phone;
 
     @OneToMany(fetch = FetchType.EAGER)
@@ -37,7 +42,8 @@ public class AppUser {
     @Column(nullable = false)
     private Boolean verified = false;
 
-    @Column
+    @Column(length = 100)
+    @Nationalized
     private String verificationCode;
 
     @Column
