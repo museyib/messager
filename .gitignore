@@ -6,5 +6,6 @@
 /server/src/main/resources/application.properties
 /server/src/main/resources/application-dev.properties
 /server/src/main/resources/application-prod.properties
+/server/src/main/resources/application-demo.properties
 # Local Netlify folder
 .netlify

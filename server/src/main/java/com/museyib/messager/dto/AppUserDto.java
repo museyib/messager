@@ -15,4 +15,8 @@ public class AppUserDto {
     private String phone;
     private List<String> roleList;
     private Boolean verified;
+    private Boolean allowReceiveMessage;
+    private Boolean showContactInformation;
+    private Boolean showReadReceipt;
+    private Boolean showOnlineStatus;
 }

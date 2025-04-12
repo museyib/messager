@@ -20,7 +20,7 @@ public class CorsConfig {
                                 "http://localhost:3000",
                                 "http://192.168.1.200:3000",
                                 "https://messager.me")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }

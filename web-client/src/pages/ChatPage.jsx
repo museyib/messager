@@ -1,17 +1,18 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {Suspense, useEffect, useRef, useState} from 'react';
 import {getMessagesByRecipient, getUnreadMessagesByUsername} from '../api/messages.js';
 import {getActiveChats, getByPhone} from '../api/users.js';
 import {Client} from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import {useNavigate} from 'react-router';
 import ToggleTheme from './ToggleThemeFragment.jsx';
 import Info from './InfoFragment.jsx';
 import Title from "./TitleFragment.jsx";
 import {logout} from "../api/auth.js";
-import EmojiPicker, {Theme} from "emoji-picker-react";
+import {Theme} from "emoji-picker-react";
+import {useNavigate} from "react-router";
+const LazyEmojiPicker = React.lazy(() => import('emoji-picker-react').then());
 
 export default function Chat () {
-    useNavigate();
+    const navigate = useNavigate();
     const [isClient, setIsClient] = useState(false);
     const [windowWidth, setWindowWidth] = useState(0);
     const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
@@ -203,7 +204,7 @@ export default function Chat () {
     }
 
     const isUserAtBottom = () => {
-        const messageContainer = document.getElementById('message-container');
+        const messageContainer = document.getElementById('main-content-container');
         return messageContainer.scrollHeight - messageContainer.scrollTop <= messageContainer.clientHeight + 5;
     }
 
@@ -240,10 +241,6 @@ export default function Chat () {
     const fetchUsers = () => {
         getActiveChats().then((response) => {
             if (response.success) {
-                showInfo({
-                    success: true,
-                    message: 'You are connected to chat!'
-                });
                 setLastError('')
                 setUsers(response.data);
             }
@@ -531,6 +528,13 @@ export default function Chat () {
         getByPhone(phoneToSearch).then(response => {
             if (response.success && response.data) {
                 const newRecipient = response.data;
+                if (!newRecipient.receivesMessage) {
+                    showInfo({
+                        success: false,
+                        message: 'This user does not receive any message currently.'
+                    });
+                    return;
+                }
                 const isInActiveChats = users.some((user) => user.username === newRecipient.username);
                 setRecipient(newRecipient.username);
                 setPhoneToSearch('');
@@ -541,7 +545,7 @@ export default function Chat () {
             else {
                 showInfo({
                     success: false,
-                    message: 'Couldn\'t find any user for this phone'
+                    message: 'Not found any user for this phone.'
                 })
             }
         });
@@ -560,13 +564,21 @@ export default function Chat () {
         }
     }
 
+    const handleUserInfo = (e) => {
+        e.preventDefault();
+        navigate('/settings');
+    }
+
     return (
         <div className='home-container'>
             <link rel='stylesheet' href={'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'}/>
 
             <Title />
             <h2 className='subtitle'>
-                <i className='fas fa-user-circle'></i> You are logged in as <u><strong>{username}</strong></u>
+                <i className='fas fa-user-circle'></i>
+                You are logged in as <span className='user-title' onClick={handleUserInfo}>
+                                        <u><strong>{username}</strong></u>
+                                    </span>
                 <p onClick={handleLogOut} className='link-btn'>Log out</p>
             </h2>
             <div className='search-container'>
@@ -608,8 +620,10 @@ export default function Chat () {
                 }
             </div>
 
-            <div ref={messageListRef} className='message-list-container' id='message-container'>
-                <div className={`selected-user-title ${recipient ? '' : 'hidden'}`}>
+            <div id='main-content-container'
+                 className='main-content-container'
+                 ref={messageListRef} >
+                <div className={`selected-recipient-title ${recipient ? '' : 'hidden'}`}>
                     <span id='back' onClick={handleBack} className='fas fa-arrow-left'></span>
                     <p>{recipient}</p>
                 </div>
@@ -646,7 +660,9 @@ export default function Chat () {
             {isClient && (
                 <div style={emojiPickerPosition}
                      className={`emoji-picker ${emojiPickerVisible ? '' : 'hidden'}`} >
-                    <EmojiPicker theme={darkMode ? Theme.DARK : Theme.LIGHT} onEmojiClick={handleEmojiSelected} />
+                    <Suspense fallback={<div>Loading...</div>}>
+                        <LazyEmojiPicker theme={darkMode ? Theme.DARK : Theme.LIGHT} onEmojiClick={handleEmojiSelected} />
+                    </Suspense>
                 </div>
             )}
 

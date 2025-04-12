@@ -10,7 +10,8 @@ export const getActiveChats = () => {
     }).then((response) => {
         return {
             success: true,
-            data: response.data.data
+            data: response.data.data,
+            message: response.data.message,
         }
     }).catch((response) => {
         console.log(response);
@@ -19,6 +20,25 @@ export const getActiveChats = () => {
             message: response.message,
         }
     });
+}
+
+export const getByUsername = (username) => {
+    const token = localStorage.getItem('token');
+    return axiosInstance.get('/user/by-username?username=' + encodeURIComponent(username), {
+        headers: {
+            Authorization: 'Bearer ' + token
+        }
+    }).then((response) => {
+        return {
+            success: true,
+            data: response.data.data
+        }
+    }).catch((response) => {
+        return {
+            success: false,
+            message: response.message,
+        }
+    })
 }
 
 export const getByPhone = (phone) => {
@@ -39,11 +59,13 @@ export const getByPhone = (phone) => {
         }
     })
 }
+
 export const checkForExistence = (name, value) => {
     return axiosInstance.get('/user/check/by-'+ name + '/' + encodeURIComponent(value)).then((response) => {
         return {
             success: true,
-            data: response.data.data
+            data: response.data.data,
+            message: response.data.message,
         }
     }).catch((response) => {
         return {

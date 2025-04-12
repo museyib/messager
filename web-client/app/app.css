@@ -93,7 +93,7 @@ body {
     background: var(--bg-color);
     color: var(--text-color);
     justify-content: center;
-    height: max(100vh, 100vh);
+    height: 100vh;
     text-align: center;
 }
 
@@ -230,7 +230,7 @@ input:checked + .slider:before {
     transform: translateX(30px);
 }
 
-.message-list-container {
+.main-content-container {
     overflow-y: auto;
     background: var(--ml-bg-color);
     min-height: 100px;
@@ -241,7 +241,7 @@ input:checked + .slider:before {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.message-list-container::-webkit-scrollbar {
+.main-content-container::-webkit-scrollbar {
     display: none;
 }
 
@@ -346,6 +346,9 @@ input:checked + .slider:before {
     word-break: break-word;
 }
 
+.user-title {
+    cursor: pointer;
+}
 
 .user-item:hover {
     background: var(--button-bg);
@@ -391,7 +394,7 @@ input:checked + .slider:before {
     opacity: var(--hover-opacity);
 }
 
-.selected-user-title {
+.selected-recipient-title {
     display: flex;
     position: absolute;
     background: var(--su-bg-color);
@@ -435,7 +438,7 @@ input:checked + .slider:before {
 }
 
 .info-message {
-    position: absolute;
+    position: fixed;
     right: 20px;
     bottom: 20px;
     border: 1px solid;
@@ -526,7 +529,7 @@ input:checked + .slider:before {
 }
 
 @media (max-width: 768px) {
-    .selected-user-title {
+    .selected-recipient-title {
         width: 95%;
     }
 
@@ -562,7 +565,7 @@ input:checked + .slider:before {
         color: var(--text-color) !important;
     }
 
-    .message-list-container {
+    .main-content-container {
         width: 95%;
     }
 
@@ -570,4 +573,48 @@ input:checked + .slider:before {
         width: 95%;
         left: 2.5%;
     }
+}
+
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    background: var(--bg-color);
+    color: var(--text-color);
+    justify-content: center;
+    text-align: left;
+    gap: 20px;
+    padding: 30px;
+}
+
+.settings-container form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    gap: 15px;
+}
+
+.settings-container form input[type="text"],
+.settings-container form input[type="email"],
+.settings-container form input[type="password"],
+.settings-container form input[type="checkbox"] {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--text-color);
+    background-color: var(--bg-color);
+}
+
+.settings-container form input[type="checkbox"] {
+    width: auto;
+    margin-top: 5px;
+    vertical-align: middle;
+}
+
+.settings-container form label {
+    font-weight: bold;
+    font-size: 14px;
+    margin: 5px;
+    vertical-align: middle;
 }

@@ -17,4 +17,11 @@ public class GlobalExceptionHandler {
         log.error(message, exception);
         return Response.getSystemError(message);
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public Response<String> handleException(final RuntimeException exception) {
+        String message = getMessage(exception);
+        log.error(message, exception);
+        return Response.getUserError(message);
+    }
 }

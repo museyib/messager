@@ -59,7 +59,7 @@ export default function Login() {
         }).catch((error) => {
             showInfo({
                 success: false,
-                message: 'Login failed: ' + error
+                message: 'Login failed: ' + error.response.data.message
             })
         });
     };

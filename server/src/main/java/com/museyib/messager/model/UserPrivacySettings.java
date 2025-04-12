@@ -2,55 +2,38 @@ package com.museyib.messager.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Nationalized;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
-@Entity
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 @Getter
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class AppUser {
+@Entity
+public class UserPrivacySettings {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 100)
-    @Nationalized
-    private String username;
-
-    @Column(length = 100)
-    @Nationalized
-    private String password;
-
-    @Column(unique = true, nullable = false, length = 100)
-    @Nationalized
-    private String email;
-
-    @Column(unique = true, nullable = false, length = 100)
-    @Nationalized
-    private String phone;
-
-    @OneToMany(fetch = FetchType.EAGER)
-    private List<AppRole> roleList;
-
-    @Column(nullable = false)
-    private Boolean verified = false;
-
-    @Column(length = 100)
-    @Nationalized
-    private String verificationCode;
+    @OneToOne
+    private AppUser appUser;
 
     @Column
-    private LocalDateTime verificationCodeExpiryDate;
+    private Boolean allowReceiveMessage = TRUE;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    private UserPrivacySettings privacySettings;
+    @Column
+    private Boolean showContactInformation = FALSE;
+
+    @Column
+    private Boolean showReadReceipt = TRUE;
+
+    @Column
+    private Boolean showOnlineStatus = TRUE;
 
     @Override
     public final boolean equals(Object object) {
@@ -59,8 +42,8 @@ public class AppUser {
         Class<?> oEffectiveClass = object instanceof HibernateProxy ? ((HibernateProxy) object).getHibernateLazyInitializer().getPersistentClass() : object.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        AppUser appUser = (AppUser) object;
-        return getId() != null && Objects.equals(getId(), appUser.getId());
+        UserPrivacySettings that = (UserPrivacySettings) object;
+        return getId() != null && Objects.equals(getId(), that.getId());
     }
 
     @Override

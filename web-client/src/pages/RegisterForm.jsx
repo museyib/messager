@@ -35,11 +35,20 @@ export default function Register() {
             clearTimeout(debounceTimer.current);
             document.getElementById(name).classList.remove('input-invalid');
             debounceTimer.current = setTimeout(() => {
-                checkForExistence(name, value).then(() => {
-                    setFormReady(document.getElementsByClassName('input-invalid').length === 0)
+                checkForExistence(name, value).then((response) => {
+                    if (response.data) {
+                        console.error(response.message)
+                        document.getElementById(name).classList.add('input-invalid');
+                        showInfo( {
+                            success: false,
+                            message: response.message,
+                        })
+
+                    }
+                    else
+                        setFormReady(document.getElementsByClassName('input-invalid').length === 0)
                 }).catch((error) => {
-                    console.log(error)
-                    document.getElementById(name).classList.add('input-invalid');
+                    console.error(error)
                     showInfo( {
                         success: false,
                         message: error.message,
