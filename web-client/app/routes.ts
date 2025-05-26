@@ -7,4 +7,7 @@ export default [
     { path: 'chat', file: 'routes/chat.jsx' },
     { path: 'verify', file: 'routes/verify.jsx' },
     { path: 'settings', file: 'routes/settings.jsx' },
+    { path: 'admin/users', file: 'routes/users.jsx' },
+    { path: '403', file: 'routes/403.jsx' },
+    { path: 'user-info', file: 'routes/user-info.jsx' },
 ] satisfies RouteConfig;

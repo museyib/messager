@@ -1,9 +1,8 @@
 import axios from 'axios';
+import {BASE_API_URL} from "./constants.js";
 
 let isRefreshing = false;
 let failedQueue = [];
-
-const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
 
 const axiosInstance = axios.create({
     baseURL: BASE_API_URL,

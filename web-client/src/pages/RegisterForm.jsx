@@ -5,6 +5,9 @@ import {checkForExistence} from '../api/users.js';
 import ToggleTheme from './ToggleThemeFragment.jsx';
 import Info from './InfoFragment.jsx';
 import Title from "./TitleFragment.jsx";
+import PhoneInput from "react-phone-number-input/mobile";
+import 'react-phone-number-input/style.css'
+import {VERIFICATION_TIMEOUT_SECONDS} from "../api/constants.js";
 
 export default function Register() {
     const [formReady, setFormReady] = useState(true);
@@ -20,6 +23,7 @@ export default function Register() {
         phone: '',
         password: '',
         password_r: '',
+        verificationTimeoutSeconds: VERIFICATION_TIMEOUT_SECONDS
     });
 
     const showInfo = (info) => {
@@ -30,8 +34,17 @@ export default function Register() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'username' || name === 'phone' || name === 'email') {
+        validateUniqueness(name, value);
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
 
+    const handlePhoneChange = (value) => {
+        validateUniqueness("phone", value);
+        setFormData((prev) => ({...prev, phone: value}));
+    }
+
+    const validateUniqueness = (name, value) => {
+        if (name === 'username' || name === 'phone' || name === 'email') {
             clearTimeout(debounceTimer.current);
             document.getElementById(name).classList.remove('input-invalid');
             debounceTimer.current = setTimeout(() => {
@@ -56,8 +69,7 @@ export default function Register() {
                 })
             }, 1000);
         }
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+    }
 
     const handleLogin = (e) => {
         e.preventDefault();
@@ -139,15 +151,16 @@ export default function Register() {
                 </div>
                 <div>
                     <label htmlFor='phone'>Phone</label>
-                    <input
+                    <PhoneInput
                         id='phone'
-                        type='text'
                         name='phone'
+                        onChange={handlePhoneChange}
                         value={formData.phone}
-                        autoComplete='phone'
-                        onChange={handleChange}
-                        className={(fieldRequirePrompted && !formData.phone) ? 'input-invalid' : ''}
-                    />
+                        international={true}
+                        defaultCountry={"AZ"}
+                        withCountryCallingCode={true}
+                        countryCallingCodeEditable={false}
+                        className ={`react-phone-number-input ${(fieldRequirePrompted && !formData.username) ? 'input-invalid' : ''}`}/>
                 </div>
                 <div>
                     <label htmlFor='password'>Password</label>

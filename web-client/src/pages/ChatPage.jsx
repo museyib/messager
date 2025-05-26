@@ -7,9 +7,10 @@ import ToggleTheme from './ToggleThemeFragment.jsx';
 import Info from './InfoFragment.jsx';
 import Title from "./TitleFragment.jsx";
 import {logout} from "../api/auth.js";
-import {Theme} from "emoji-picker-react";
-import {useNavigate} from "react-router";
-const LazyEmojiPicker = React.lazy(() => import('emoji-picker-react').then());
+import EmojiPicker, {Theme} from "emoji-picker-react";
+import {Link, useNavigate} from "react-router";
+import PhoneInput from "react-phone-number-input/mobile";
+import 'react-phone-number-input/style.css'
 
 export default function Chat () {
     const navigate = useNavigate();
@@ -18,10 +19,11 @@ export default function Chat () {
     const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
     const [username, setUsername] = useState('');
-    const [recipient, setRecipient] = useState('');
+    const [recipient, setRecipient] = useState({});
     const [messageText, setMessageText] = useState('');
     const [lastError, setLastError] = useState('');
     const [phoneToSearch, setPhoneToSearch] = useState('');
+    const [userStatus, setUserStatus] = useState('');
     const [emojiPickerPosition, setEmojiPickerPosition] = useState({});
 
     const [now, setNow] = useState(Date.now());
@@ -38,8 +40,9 @@ export default function Chat () {
     const messageEndRef = useRef(null);
     const clientRef = useRef(null);
     const observerRef = useRef(null);
-    const subscriptionRef = useRef(null);
+    const messageSubscriptionRef = useRef(null);
     const inputRef = useRef(null);
+    const statusSubscriptionRef = useRef(null);
 
     const BASE_API_URL = import.meta.env.VITE_BASE_API_URL;
 
@@ -100,7 +103,7 @@ export default function Chat () {
     useEffect(() => {
         setEmojiPickerVisible(false);
         setMessageText('');
-        fetchMessages(recipient);
+        fetchMessages(recipient.username);
 
         setTimeout(() =>{
             scrollToFirstUnread()
@@ -118,9 +121,11 @@ export default function Chat () {
             const stompClient = new Client({
                 webSocketFactory: () => socket,
                 onConnect: () => {
+                    sendStatus('online', true);
                     subscribeToMessages(username, recipient);
+                    subscribeToStatusChange(recipient);
 
-                    clientRef.current?.subscribe(`/user/${username}/deliver/message`, (message) => {
+                    clientRef.current?.subscribe(`/chat/${username}/deliver/message`, (message) => {
                         const readMessage = JSON.parse(message.body);
                         setMessages((prevMessages) =>
                             prevMessages.map(msg =>
@@ -129,7 +134,7 @@ export default function Chat () {
                         );
                     });
 
-                    clientRef.current?.subscribe(`/user/${username}/deliver/messages`, (message) => {
+                    clientRef.current?.subscribe(`/chat/${username}/deliver/messages`, (message) => {
                         const deliveredAt = message.body;
                         setMessages((prevMessages) =>
                             prevMessages.map(msg =>
@@ -138,7 +143,7 @@ export default function Chat () {
                         );
                     });
 
-                    clientRef.current?.subscribe(`/user/${username}/read/messages`, (message) => {
+                    clientRef.current?.subscribe(`/chat/${username}/read/messages`, (message) => {
                         const readMessage = JSON.parse(message.body);
                         setMessages((prevMessages) =>
                             prevMessages.map(msg =>
@@ -153,10 +158,12 @@ export default function Chat () {
         }
         else {
             subscribeToMessages(username, recipient);
+            subscribeToStatusChange(recipient);
         }
 
         return () => {
-            subscriptionRef.current?.unsubscribe();
+            messageSubscriptionRef.current?.unsubscribe();
+            statusSubscriptionRef.current?.unsubscribe();
         };
     }, [username, recipient]);
 
@@ -165,11 +172,11 @@ export default function Chat () {
     }, [messages]);
 
     const subscribeToMessages = (username, recipient) => {
-        subscriptionRef.current?.unsubscribe();
+        messageSubscriptionRef.current?.unsubscribe();
 
-        subscriptionRef.current = clientRef.current?.subscribe(`/user/${username}/queue/messages`, (message) => {
+        messageSubscriptionRef.current = clientRef.current?.subscribe(`/chat/${username}/queue/messages`, (message) => {
             const newMessage = JSON.parse(message.body);
-            if (recipient === newMessage.sender) {
+            if (recipient.username === newMessage.sender) {
                 setMessages((prev) => [...prev, newMessage]);
                 setTimeout(markMessagesAsRead, 300);
                 if (isUserAtBottom()) setTimeout(scrollToBottom, 50);
@@ -178,6 +185,42 @@ export default function Chat () {
                 sendDeliveredReceiptWithRetry(newMessage.clientId);
             }
         });
+    }
+
+    const subscribeToStatusChange = (recipient) => {
+        statusSubscriptionRef.current?.unsubscribe();
+
+        statusSubscriptionRef.current = clientRef.current?.subscribe(`/status`, (message) => {
+            const statusInfo = JSON.parse(message.body);
+            if (statusInfo) {
+                setUsers((prevUsers= []) => {
+                    return prevUsers.map((user) => {
+                        if (user.username === statusInfo.username) {
+                            return {...user, status: statusInfo.status };
+                        }
+                        return user;
+                    });
+                });
+
+                if (statusInfo.username === recipient.username) {
+                    setUserStatus(statusInfo.status);
+                }
+            }
+        });
+    }
+
+    const sendStatus = (status, isOnline) => {
+        const storedUsername = localStorage.getItem('username');
+
+        if (clientRef.current && clientRef.current.connected)
+            clientRef.current.publish({
+                destination: '/app/send-status',
+                body: JSON.stringify({
+                    username: storedUsername,
+                    status: status,
+                    isOnline: isOnline,
+                })
+        })
     }
 
     const toggleEmojiPicker = (e) => {
@@ -391,17 +434,22 @@ export default function Chat () {
         setMessageText(e.target.value);
     }
 
-    const handleRecipientChange = (username) => {
-        setRecipient(username);
+    const handleRecipientChange = (user) => {
+        setRecipient(user);
+        setUserStatus(user.status);
     }
 
     const handleRecipientChangeFromSelect = (e) => {
         e.preventDefault();
         setRecipient(e.target.value);
+        setUserStatus('');
     }
 
     const handleBack = () => {
-        setRecipient('')
+        setRecipient({
+            username: '',
+            status: ''
+        })
     }
 
     const handleSendMessage = (e) => {
@@ -412,9 +460,9 @@ export default function Chat () {
         const sentAt = new Date(now.getTime() - offset * 60000).toISOString().slice(0, 19);
         e.preventDefault();
         const messageData = {
-            clientId: username + '_' + recipient + timeStamp,
+            clientId: username + '_' + recipient.username + timeStamp,
             sender: username,
-            receiver: recipient,
+            receiver: recipient.username,
             message: messageText,
             sentAt: sentAt
         };
@@ -433,7 +481,7 @@ export default function Chat () {
 
 
         setMessages((prev) => [...prev, messageData]);
-        if (clientRef.current) {
+        if (clientRef.current && clientRef.current.connected) {
             clientRef.current.publish({
                 destination: '/app/send',
                 body: JSON.stringify(messageData),
@@ -446,7 +494,7 @@ export default function Chat () {
     const sendDeliveredReceiptBulk = (recipient) => {
         const storedUsername = localStorage.getItem('username');
         if (storedUsername === recipient || !clientRef.current?.connected) return;
-        try {
+        if (clientRef.current && clientRef.current.connected) {
             clientRef.current.publish({
                 destination: '/app/set-delivered/messages',
                 body: JSON.stringify({
@@ -454,19 +502,15 @@ export default function Chat () {
                     receiver: storedUsername,
                 }),
             });
-        } catch (error) {
-            console.error('STOMP publish error:', error);
         }
     }
 
     const sendDeliveredReceipt = (clientId) => {
-        try {
+        if (clientRef.current && clientRef.current.connected) {
             clientRef.current.publish({
                 destination: '/app/set-delivered/message',
                 body: clientId,
             });
-        } catch (error) {
-            console.error('STOMP publish error:', error);
         }
     }
 
@@ -482,13 +526,11 @@ export default function Chat () {
     }
 
     const sendReadReceipt = (clientId) => {
-        try {
+        if (clientRef.current && clientRef.current.connected) {
             clientRef.current.publish({
                 destination: '/app/read/message',
                 body: clientId,
             });
-        } catch (error) {
-            console.error('STOMP publish error:', error);
         }
     }
 
@@ -513,13 +555,12 @@ export default function Chat () {
 
         setUnreadMessages((prev) => ({
             ...prev,
-            [recipient]: 0
+            [recipient.username]: 0
         }));
     };
 
-    const handleSearchPhoneChange = (e) => {
-        e.preventDefault();
-        setPhoneToSearch(e.target.value);
+    const handleSearchPhoneChange = (value) => {
+        setPhoneToSearch(value);
     }
 
     const handleSearchByPhone = (e) => {
@@ -528,7 +569,7 @@ export default function Chat () {
         getByPhone(phoneToSearch).then(response => {
             if (response.success && response.data) {
                 const newRecipient = response.data;
-                if (!newRecipient.receivesMessage) {
+                if (!newRecipient.allowReceiveMessage) {
                     showInfo({
                         success: false,
                         message: 'This user does not receive any message currently.'
@@ -536,7 +577,8 @@ export default function Chat () {
                     return;
                 }
                 const isInActiveChats = users.some((user) => user.username === newRecipient.username);
-                setRecipient(newRecipient.username);
+                setRecipient(newRecipient);
+                setUserStatus(newRecipient.status);
                 setPhoneToSearch('');
                 if (!isInActiveChats) {
                     setUsers((prev) => [...prev, newRecipient]);
@@ -552,6 +594,13 @@ export default function Chat () {
     }
 
     const handleLogOut = () => {
+        sendStatus('offline', false);
+        if (clientRef.current) {
+            if (clientRef.current.connected)
+                clientRef.current.deactivate({
+                    force: true,
+                });
+        }
         logout();
     }
 
@@ -560,11 +609,14 @@ export default function Chat () {
             if (emojiPickerVisible)
                 setEmojiPickerVisible(false);
             else
-                setRecipient('');
+                setRecipient({
+                    username: '',
+                    status: ''
+                });
         }
     }
 
-    const handleUserInfo = (e) => {
+    const handleUserSettings = (e) => {
         e.preventDefault();
         navigate('/settings');
     }
@@ -576,7 +628,7 @@ export default function Chat () {
             <Title />
             <h2 className='subtitle'>
                 <i className='fas fa-user-circle'></i>
-                You are logged in as <span className='user-title' onClick={handleUserInfo}>
+                You are logged in as <span className='user-title' onClick={handleUserSettings}>
                                         <u><strong>{username}</strong></u>
                                     </span>
                 <p onClick={handleLogOut} className='link-btn'>Log out</p>
@@ -584,20 +636,26 @@ export default function Chat () {
             <div className='search-container'>
                 {(
                     <form onSubmit={handleSearchByPhone}>
-                        <input type='text'
-                               onFocus={() => setEmojiPickerVisible(false)}
-                               placeholder='Search by phone'
-                               onChange={handleSearchPhoneChange}
-                               value={phoneToSearch}
+                        <label htmlFor='phone-to-search'>Search by phone</label>
+                        <PhoneInput id='phone-to-search'
+                                    onFocus={() => setEmojiPickerVisible(false)}
+                                    title='Search by phone'
+                                    onChange={handleSearchPhoneChange}
+                                    value={phoneToSearch}
+                                    international={true}
+                                    defaultCountry={"AZ"}
+                                    withCountryCallingCode={true}
+                                    countryCallingCodeEditable={false}
+                                    className = 'react-phone-number-input'
                         />
                     </form>
                 )}
             </div>
             <div className='user-list'>
                 {windowWidth <= 768 ? (
-                    <select value={recipient}
+                    <select value={recipient.username}
                             onChange={handleRecipientChangeFromSelect}
-                            className={`dropdown ${recipient ? '' : 'not-selected'}`}
+                            className={`dropdown ${recipient.username ? '' : 'not-selected'}`}
                     >
                         <option value=''>--not selected--</option>
                         {users.map((user, index) => (
@@ -611,8 +669,8 @@ export default function Chat () {
                     users.map((user, index) => (
                             <div key={index}
                                  id={'user-' + user.username}
-                                 className={`user-item ${recipient === user.username ? 'selected' : ''}`}
-                                 onClick={() => handleRecipientChange(user.username)}>
+                                 className={`user-item ${recipient.username === user.username ? 'selected' : ''}`}
+                                 onClick={() => handleRecipientChange(user)}>
                                 {user.username}
                                 {unreadMessages[user.username] > 0 && (<span className='unread-badge'>{unreadMessages[user.username]}</span>)}
                             </div>
@@ -623,15 +681,18 @@ export default function Chat () {
             <div id='main-content-container'
                  className='main-content-container'
                  ref={messageListRef} >
-                <div className={`selected-recipient-title ${recipient ? '' : 'hidden'}`}>
+                <div className={`selected-recipient-title ${recipient.username ? '' : 'hidden'}`}>
                     <span id='back' onClick={handleBack} className='fas fa-arrow-left'></span>
-                    <p>{recipient}</p>
+                    <Link to={`/user-info?username=${recipient.username}`}>
+                        {recipient.username} <span className={`status-indicator ${userStatus}`}>{userStatus}</span>
+                    </Link>
+
                 </div>
                 <ul id='message-list' className='message-list'>
                     {messages.map((message, index) => (
                         <li key={index}>
                             <div id={message.clientId}
-                                 className={`message-item ${message.sender === username ? 'message-item-right' : 'message-item-left'} ${(!message.readAt && message.sender === recipient) ? 'unread' : ''}`}>
+                                 className={`message-item ${message.sender === username ? 'message-item-right' : 'message-item-left'} ${(!message.readAt && message.sender === recipient.username) ? 'unread' : ''}`}>
                                 <span className={`message-item-menu ${message.sender === username ? 'message-item-menu-right' : 'message-item-menu-left'}`}>☰</span>
                                 <div id={'menu_' + index} className='message-item-menu-list'>
                                     <ul>
@@ -659,9 +720,9 @@ export default function Chat () {
 
             {isClient && (
                 <div style={emojiPickerPosition}
-                     className={`emoji-picker ${emojiPickerVisible ? '' : 'hidden'}`} >
+                     className={`emoji-picker ${emojiPickerVisible ? '' : 'hidden'}`}>
                     <Suspense fallback={<div>Loading...</div>}>
-                        <LazyEmojiPicker theme={darkMode ? Theme.DARK : Theme.LIGHT} onEmojiClick={handleEmojiSelected} />
+                        <EmojiPicker theme={darkMode ? Theme.DARK : Theme.LIGHT} onEmojiClick={handleEmojiSelected} />
                     </Suspense>
                 </div>
             )}

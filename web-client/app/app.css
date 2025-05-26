@@ -59,6 +59,8 @@ input:focus {
     --info-fail-color: #721c24;
     --tab-button: #a1a1a1;
     --hover-opacity: 0.85;
+    --table-bg-color: #e4e6eb;
+    --table-bg-color-hover: #d4d6de;
 }
 
 /* Dark Mode */
@@ -77,6 +79,8 @@ input:focus {
     --info-fail-bg-color: #f16060;
     --info-fail-color: #bf0404;
     --tab-button: #616161;
+    --table-bg-color: #212529;
+    --table-bg-color-hover: #333;
 }
 
 /* Apply theme */
@@ -150,6 +154,16 @@ body {
     cursor: pointer;
     border-radius: 5px;
     color: var(--button-bg);
+    transition: 0.3s ease;
+    padding: 3px;
+}
+
+.link-btn-red {
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    color: var(--info-fail-color);
     transition: 0.3s ease;
     padding: 3px;
 }
@@ -324,7 +338,7 @@ input:checked + .slider:before {
 
 .user-list {
     position: absolute;
-    top: 60px;
+    top: 85px;
     left: 10px;
     width: 18%;
     height: 90%;
@@ -405,6 +419,24 @@ input:checked + .slider:before {
     font-size: 2rem;
     align-items: baseline;
     word-break: break-word;
+}
+
+.status-indicator {
+    font-size: 12px;
+    border-radius: 12px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.status-indicator.online {
+    background: #4f4ff6;
+    color: white;
+    padding: 2px 8px;
+}
+
+.status-indicator.offline {
+    background: gray;
+    color: white;
 }
 
 #back {
@@ -617,4 +649,32 @@ input:checked + .slider:before {
     font-size: 14px;
     margin: 5px;
     vertical-align: middle;
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.table td,
+.table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.table tr:nth-child(even) {
+    background-color: var(--table-bg-color);
+}
+
+.center {
+    text-align: center;
+}
+
+.table tr:hover {
+    opacity: var(--hover-opacity);
+    background-color: var(--table-bg-color-hover);
+}
+
+.react-phone-number-input .PhoneInputCountrySelect {
+    background-color: var(--bg-color);
 }
