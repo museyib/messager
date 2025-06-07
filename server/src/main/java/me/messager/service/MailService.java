@@ -18,7 +18,7 @@ public class MailService {
         this.mailSender = mailSender;
     }
 
-    public void  sendEmail(String content, String title, String recipient)
+    public void sendEmail(String content, String title, String recipient)
     {
         MimeMessagePreparator messagePreparator;
         try
