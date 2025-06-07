@@ -441,8 +441,14 @@ export default function Chat () {
 
     const handleRecipientChangeFromSelect = (e) => {
         e.preventDefault();
-        setRecipient(e.target.value);
-        setUserStatus('');
+        let selectedUser;
+        users.filter((user) => {
+            if (user.username === e.target.value) {
+                selectedUser = user;
+                return true;
+            }
+        })
+        setRecipient(selectedUser);
     }
 
     const handleBack = () => {
@@ -727,7 +733,7 @@ export default function Chat () {
                 </div>
             )}
 
-            <form onSubmit={handleSendMessage} className={'message-input-form ' + (recipient ? '' : 'hidden')}>
+            <form onSubmit={handleSendMessage} className={'message-input-form ' + (recipient.username ? '' : 'hidden')}>
                 <p className='fas fa-smile link-btn' onClick={toggleEmojiPicker}></p>
                 <input id='message'
                        name='message'

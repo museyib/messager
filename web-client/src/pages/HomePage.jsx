@@ -12,7 +12,7 @@ export default function Home() {
         if (logStatus) {
             navigate("/chat");
         }
-    })
+    }, [])
 
     return (
         <div className="home-container">
