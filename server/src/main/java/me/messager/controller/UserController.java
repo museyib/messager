@@ -1,9 +1,6 @@
 package me.messager.controller;
 
-import me.messager.dto.AppUserDto;
-import me.messager.dto.RegisterRequest;
-import me.messager.dto.UserInfo;
-import me.messager.dto.VerificationRequest;
+import me.messager.dto.*;
 import me.messager.model.Response;
 import me.messager.service.AppUserService;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +60,24 @@ public class UserController {
     @PostMapping("/verify")
     public ResponseEntity<Response<String>> verify(@RequestBody VerificationRequest verificationRequest) {
         Response<String> response = userService.verify(verificationRequest);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/send-password-reset-request")
+    public ResponseEntity<Response<String>> sendPasswordResetRequest(@RequestParam("email") String email) {
+        Response<String> response = userService.sendPasswordResetRequest(email);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Response<String>> resetPassword(@RequestBody PasswordResetRequest request) {
+        Response<String> response = userService.resetPassword(request);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Response<String>> changePassword(@RequestBody PasswordChangeRequest request) {
+        Response<String> response = userService.changePassword(request);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

@@ -3,9 +3,13 @@ package me.messager.service;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import me.messager.security.model.PasswordResetToken;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
+
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 @Service
 @Slf4j
@@ -43,6 +47,15 @@ public class MailService {
     public void sendVerificationCode(String verificationCode, String email) {
         String title = "Verify Your Account";
         String content = "Your verification code: " + verificationCode;
+        sendEmail(content, title, email);
+    }
+
+    public void sendPasswordResetRequest(PasswordResetToken resetToken, String email) {
+        String title = "Password reset Request";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss");
+        String content = """
+                Your password reset request link: <a href='https://messager.me/reset-password?token=%s'>Click here</a>.
+                This link is valid till <b>%s</b>""".formatted(resetToken.getToken(), resetToken.getExpiryDate().format(formatter));
         sendEmail(content, title, email);
     }
 }

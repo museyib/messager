@@ -5,12 +5,18 @@ import me.messager.dto.*;
 import me.messager.model.AppUser;
 import me.messager.model.Response;
 import me.messager.model.UserPrivacySettings;
+import me.messager.repository.PasswordResetTokenRepository;
 import me.messager.repository.UserRepository;
-import me.messager.repository.UserSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.messager.security.model.PasswordResetToken;
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.PasswordGenerator;
+import org.passay.Rule;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -24,9 +30,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Slf4j
 public class AppUserService {
     private final UserRepository userRepository;
-    private final UserSettingsRepository settingsRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     public Response<List<AppUserDto>> getUsers() {
         try {
@@ -228,6 +234,57 @@ public class AppUserService {
         return Response.getSuccessMessage("User successfully verified");
     }
 
+    public Response<String> sendPasswordResetRequest(@RequestParam("email") String email) {
+        AppUser user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return Response.getUserError("Invalid email");
+        }
+        try {
+
+            String token = generateToken();
+            PasswordResetToken resetToken = new PasswordResetToken();
+            resetToken.setToken(token);
+            resetToken.setExpiryDate(LocalDateTime.now().plusDays(1));
+            resetToken.setUser(user);
+            passwordResetTokenRepository.save(resetToken);
+            mailService.sendPasswordResetRequest(resetToken, email);
+            return Response.getSuccessMessage("Request link was sent.");
+        } catch (RuntimeException e) {
+            return Response.getSystemError(e.getMessage());
+        }
+    }
+
+    public Response<String> resetPassword(PasswordResetRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken());
+        if (resetToken == null) {
+            return Response.getUserError("Invalid token");
+        } else if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return Response.getUserError("Token expired");
+        } else if (resetToken.isUsed()) {
+            return Response.getUserError("Token already used");
+        } else {
+            AppUser user = resetToken.getUser();
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+            resetToken.setUsed(true);
+            passwordResetTokenRepository.save(resetToken);
+            return Response.getSuccessMessage("Password was reset successfully");
+        }
+    }
+
+    public Response<String> changePassword(PasswordChangeRequest request) {
+        AppUser user = userRepository.findByUsername(request.getUsername()).orElse(null);
+        if (user == null) {
+            return Response.getUserError("Invalid username");
+        } else if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            return Response.getUserError("Current password is not correct");
+        } else {
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+            return Response.getSuccessMessage("Password changed successfully");
+        }
+    }
+
     public void delete(String username) {
         userRepository.findByUsername(username).ifPresent(userRepository::delete);
     }
@@ -267,5 +324,21 @@ public class AppUserService {
         SecureRandom random = new SecureRandom();
         int code = random.nextInt(999999);
         return String.format("%06d", code);
+    }
+
+    private String generateToken() {
+        PasswordGenerator passwordGenerator = new  PasswordGenerator();
+        CharacterRule lowerCharacterRule = new CharacterRule(EnglishCharacterData.LowerCase);
+        lowerCharacterRule.setNumberOfCharacters(2);
+
+        CharacterRule upperCharacterRule = new CharacterRule(EnglishCharacterData.UpperCase);
+        upperCharacterRule.setNumberOfCharacters(2);
+
+        CharacterRule digitCharacterRule = new CharacterRule(EnglishCharacterData.Digit);
+        digitCharacterRule.setNumberOfCharacters(2);
+
+        Rule[] rules = new CharacterRule[]{lowerCharacterRule, upperCharacterRule,  digitCharacterRule};
+
+        return passwordGenerator.generatePassword(10, rules);
     }
 }

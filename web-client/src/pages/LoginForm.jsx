@@ -69,6 +69,11 @@ export default function Login() {
         navigate('/register');
     }
 
+    const handleResetPassword = (e) => {
+        e.preventDefault();
+        navigate('/send-password-reset-request');
+    }
+
     return (
         <div className='home-container'>
             <Title/>
@@ -100,6 +105,7 @@ export default function Login() {
                 </div>
                 <input type='submit' className='btn' value='Login'/>
                 <h6>Or create new account: <span onClick={handleRegister} className='link-btn'>Register</span></h6>
+                <h6><span onClick={handleResetPassword} className='link-btn'>Forgot password?</span></h6>
             </form>
 
             <Info info={info} key={infoKey}/>

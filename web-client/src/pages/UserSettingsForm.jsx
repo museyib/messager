@@ -9,9 +9,13 @@ import {useNavigate} from "react-router";
 export default function UserSettings() {
     const navigate = useNavigate();
     const debounceTimer = useRef(null);
+    const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
     const [formReady, setFormReady] = useState(true);
     const [info, setInfo] = useState(null);
     const [infoKey, setInfoKey] = useState(0);
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -54,6 +58,19 @@ export default function UserSettings() {
         setInfo(info);
         setInfoKey((prev) => prev + 1);
         setFieldRequirePrompted(!info.success)
+    }
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        if (name === "currentPassword") {
+            setCurrentPassword(value);
+        }
+        if (name === "newPassword") {
+            setNewPassword(value);
+        }
+        else if (name === "newPasswordConfirm") {
+            setNewPasswordConfirm(value);
+        }
     }
 
     const handleChange = (e) => {
@@ -117,6 +134,43 @@ export default function UserSettings() {
         });
     }
 
+    const handleSavePassword = (e) => {
+        e.preventDefault();
+        if (newPassword !== newPasswordConfirm) {
+            showInfo({
+                success: false,
+                message: 'Passwords do not match!',
+            })
+        } else if (newPassword === currentPassword) {
+            showInfo({
+                success: false,
+                message: 'New password must differ than current password!',
+            })
+        } else {
+            const username = localStorage.getItem('username');
+            const token = localStorage.getItem('token');
+            axiosInstance.post('/user/change-password', {
+                username: username,
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then((response) => {
+                showInfo({
+                    success: true,
+                    message: response.data.message,
+                })
+            }).catch(error => {
+                showInfo({
+                    success: false,
+                    message: error.response.data.message,
+                })
+            })
+        }
+    }
+
     const handleBack = () => {
         navigate('/chat');
     }
@@ -127,7 +181,52 @@ export default function UserSettings() {
             <Title />
 
             <span id='back' onClick={handleBack} className='fas fa-arrow-left'></span>
-            <form onSubmit={handleSave} className='space-y-4'>
+            <div>
+                <p className='link-btn' onClick={() => setShowChangePasswordForm(!showChangePasswordForm)}>
+                    {!showChangePasswordForm ? 'Change Password' : 'Edit User Settings'}
+                </p>
+                <div className={showChangePasswordForm ? '' : 'hidden'}>
+                    <form onSubmit={handleSavePassword} className='space-y-4'>
+                        <div>
+                            <label htmlFor='currentPassword'>Current Password</label>
+                            <input
+                                id='currentPassword'
+                                type='password'
+                                name='currentPassword'
+                                value={currentPassword}
+                                onChange={handlePasswordChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor='newPassword'>New Password</label>
+                            <input
+                                id='newPassword'
+                                type='password'
+                                name='newPassword'
+                                value={newPassword}
+                                onChange={handlePasswordChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor='newPasswordConfirm'>New Password (Repeat)</label>
+                            <input
+                                id='newPasswordConfirm'
+                                type='password'
+                                name='newPasswordConfirm'
+                                value={newPasswordConfirm}
+                                onChange={handlePasswordChange}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <input type='submit' className='btn' value='Change password' />
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <form onSubmit={handleSave} className={`space-y-4 ${!showChangePasswordForm? '' : 'hidden'}`}>
                 <div>
                     <label htmlFor='email'>Email</label>
                     <input

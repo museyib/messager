@@ -84,10 +84,29 @@ export default function Chat () {
     });
 
     useEffect(() => {
+        let offlineTimeout = null;
         window.addEventListener('keydown', handleEscapePress);
+        window.addEventListener('focus', () => {
+            if (offlineTimeout) {
+                clearTimeout(offlineTimeout);
+                offlineTimeout = null;
+            }
+            sendStatus('online', true);
+        });
+        window.addEventListener('blur', () => {
+            offlineTimeout = setTimeout(() => {
+                sendStatus('offline', false);
+            }, 3000);
+        });
 
         return () => {
             window.removeEventListener('keydown', handleEscapePress);
+            window.removeEventListener('focus', () => {
+                sendStatus('online', true);
+            });
+            window.removeEventListener('blur', () => {
+                sendStatus('offline', false);
+            });
         }
     }, [emojiPickerVisible])
 

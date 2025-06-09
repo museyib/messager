@@ -10,4 +10,6 @@ export default [
     { path: 'admin/users', file: 'routes/users.jsx' },
     { path: '403', file: 'routes/403.jsx' },
     { path: 'user-info', file: 'routes/user-info.jsx' },
+    { path: 'reset-password', file: 'routes/reset-password.jsx' },
+    { path: 'send-password-reset-request', file: 'routes/send-password-reset-request.jsx' },
 ] satisfies RouteConfig;
