@@ -14,7 +14,7 @@ const useCountDownTimer = (initialTime) => {
         if (storedTime) {
             setCountDown(Number(storedTime));
         }
-    });
+    }, []);
 
     useEffect(() => {
         if (countDown > 0) {
